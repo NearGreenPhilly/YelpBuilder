@@ -1,0 +1,14 @@
+httplib2==0.9
+httpretty==0.8.8
+oauth2==1.5.211
+oauthlib==0.7.2
+pylint==1.4.3
+python-openid==2.2.5
+pytz==2015.2
+requests==2.6.0
+requests-oauthlib==0.4.2
+simplejson==3.6.5
+six==1.9.0
+snowballstemmer==1.2.0
+googlemaps==2.4.2
+jsonfield==1.0.3
