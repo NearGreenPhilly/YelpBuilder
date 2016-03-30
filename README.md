@@ -5,7 +5,7 @@ To Install
 
 Open a console, cd to this directory and:
 
-$ pip install requirements.txt
+$ pip install -r requirements.txt
 
 
 Inputs
