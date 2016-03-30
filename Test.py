@@ -28,7 +28,9 @@ businessTypes = ['deptstores','discountstore','drugstores','homeandgarden','offi
                  'fashion','electronics','media','artsandcrafts','antiques','wholesale_stores']
 
 # Where to save the file at
-floc = "C:/Users/kdenny/Documents/YelpBuilder/Results/"
+# floc = "C:/Users/kdenny/Documents/YelpBuilder/Results/"
+
+floc = "/Users/kevindenny/Documents/YelpBuilder/Results/"
 
 fname = "Ithaca.csv"
 
