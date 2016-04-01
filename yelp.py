@@ -14,6 +14,7 @@ import urllib
 import urllib2
 import oauth2
 import os
+from SpatialExtent import splitBounds, resplitBounds
 
 # OAuth credential placeholders that must be filled in by users.
 CONSUMER_KEY = 'EXMisJNWez_PuR5pr06hyQ'
@@ -69,8 +70,79 @@ def getRestaurantAddressDict(restaurants):
 
     return addressdict
 
+def requery1(btype, boundingarea, city, state, bizlist):
+    boxes = splitBounds(boundingarea, city, state)
+    finalresults = bizlist
+    for a in boxes:
+        thisbox = boxes[a]
+        bound = "{0}|{1}".format(thisbox['sw_bound'], thisbox['ne_bound'])
+        results = search2(btype,bound)['businesses']
+        processedyelpresults = processResults(results)
+        # pprint(processedyelpresults)
+        if len(processedyelpresults) == 20:
+            newboxes = resplitBounds(thisbox)
+            for b in newboxes:
+                abox = newboxes[b]
+                nbound = "{0}|{1}".format(abox['sw_bound'], abox['ne_bound'])
+                results = search2(btype,nbound)['businesses']
+                processedyelpresults = processResults(results)
+                if len(processedyelpresults) == 20:
+                    newboxes2 = resplitBounds(abox)
+                    for b2 in newboxes2:
+                        bbox = newboxes2[b2]
+                        nbound = "{0}|{1}".format(bbox['sw_bound'], bbox['ne_bound'])
+                        results = search2(btype,nbound)['businesses']
+                        processedyelpresults = processResults(results)
+                        for f in processedyelpresults:
+                            # pprint (f)
+                            inList = False
+                            if len(bizlist) > 0:
+                                for res in bizlist:
+                                    if f['name'] == res['name'] and f['address'] == res['address']:
+                                        # print ("YAAA")
+                                        inList = True
+                                if inList == False:
+                                    # print("F2")
+                                    finalresults.append(f)
+                            else:
+                                # print(f)
+                                # print("F")
+                                finalresults.append(f)
+                for f in processedyelpresults:
+                    # pprint (f)
+                    inList = False
+                    if len(bizlist) > 0:
+                        for res in bizlist:
+                            if f['name'] == res['name'] and f['address'] == res['address']:
+                                # print ("YAAA")
+                                inList = True
+                        if inList == False:
+                            # print("F2")
+                            finalresults.append(f)
+                    else:
+                        # print(f)
+                        # print("F")
+                        finalresults.append(f)
+        elif len(processedyelpresults) < 20:
+            for r in processedyelpresults:
+                inList = False
+                if len(bizlist) > 0:
+                    for res in bizlist:
+                        if r['name'] == res['name'] and r['address'] == res['address']:
+                            inList = True
+                    if inList == False:
+                        # print("R2")
+                        finalresults.append(r)
+                else:
+                    # print(r)
+                    # print("R")
+                    finalresults.append(r)
 
-def calcBusinessList(businessTypes, boundingarea):
+    # pprint(finalresults)
+    return finalresults
+
+
+def calcBusinessList(businessTypes, boundingarea, city, state):
     """Calls the Yelp API to search around each intermediate route point the function to process the
     yelp results, and adds all new restaurants to a list.
 
@@ -84,18 +156,30 @@ def calcBusinessList(businessTypes, boundingarea):
 
     """
     bizlist = []
-    used = []
+    usednames = []
+    usedaddresses = []
     # btype = str(businessTypes[0])
     for bee in businessTypes:
         btype = str(bee)
     # if len(businessTypes) > 1:
     #     btype = ",".join(businessTypes)
         yelpresults = search2(btype,boundingarea)['businesses']
-        processedyelpresults = processResults(yelpresults)
-        for result in processedyelpresults:
-            if (result not in used):
-                bizlist.append(processedyelpresults[result])
-                used.append(result)
+        if len(yelpresults) == 20:
+            yelpresults = requery1(btype, boundingarea, city, state, bizlist)
+        else:
+            yelpresults = processResults(yelpresults)
+        # pprint(processedyelpresults)
+        # print len(processedyelpresults)
+        for result in yelpresults:
+            inList = False
+            # pprint(bizlist)
+            for biz in bizlist:
+                # print(result)
+                # print(biz)
+                if result['name'] == biz['name'] and result['address'] == biz['address']:
+                    inList = True
+            if inList == False:
+                bizlist.append(result)
 
     return bizlist
 
@@ -179,18 +263,19 @@ def processResults(results):
         restaurantDict: The processed results into an easier to use format
 
     """
-    restaurantDict = {}
+    # restaurantDict = {}
+    restaurantList = []
     for result in results:
         rdict = {}
-        name = result['name']
+        name = result['name'].encode('ascii', 'ignore')
         location = result['location']
-        rdict['name'] = name
-        rdict['url'] = result['mobile_url']
-        rdict['Biz Type'] = result['categories']
+        rdict['name'] = name.encode('ascii', 'ignore')
+        rdict['url'] = result['mobile_url'].encode('ascii', 'ignore')
+        rdict['Biz Type'] = result['categories'][0][0]
         rdict['closed'] = result['is_closed']
-        rdict['address'] = location['display_address'][0]
+        rdict['address'] = location['display_address'][0].encode('ascii', 'ignore')
         if 'neighborhoods' in location:
-            rdict['neighborhood'] = location['neighborhoods'][0]
+            rdict['neighborhood'] = location['neighborhoods'][0].encode('ascii', 'ignore')
         else:
             rdict['neighborhood'] = 'N/A'
         if 'display_phone' in result:
@@ -201,9 +286,11 @@ def processResults(results):
         if ('coordinate' in result['location']):
             rdict['coords'] = [result['location']['coordinate']['latitude'], result['location']['coordinate']['longitude']]
             if rdict['city'] != rdict['address']:
-                restaurantDict[name] = rdict
+                # restaurantDict[name] = rdict
+                restaurantList.append(rdict)
 
-    return restaurantDict
+    # return restaurantDict
+    return restaurantList
 
 
 def writeResults(floc, fname, fr):

@@ -18,8 +18,12 @@ included in the current
 Current Process Flow
 
 - Input a list of all business types to query into Test.py
-- Input the SW and NE coordinate for the area you wish to search
-- Run Test.py
+- Input the city and state FIPS code you want - need to add state Places dictionary from Census for each state
+- Bounding box is computed from min / max extent of city
+- If the Yelp API returns max results (= 20), split the bounding box into quadrants and iterate through the newly created quadrants
 
 
-Idealized Process Flow
+
+
+
+
