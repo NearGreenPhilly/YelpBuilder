@@ -16,7 +16,10 @@ SEARCH_PATH = '/geo/1.0/boundary-set/places/'
 
 def calcBound(city, state):
 
-    gj = search(state, city)['simple_shape']['coordinates']
+    gj = search(state, city)['simple_shape']
+    fname='/Users/kevindenny/Documents/YelpBuilder/Results/{0}_{1}.geojson'.format(city, state)
+    saveGeojson(gj,fname)
+    gj = gj['coordinates']
     maxc = getMax(gj)
     minc = getMin(gj)
 
@@ -30,6 +33,7 @@ def calcBound(city, state):
 def splitBounds(boundingarea, city, state):
 
     gj = search(state, city)['simple_shape']['coordinates']
+
     maxc = getMax(gj)
     minc = getMin(gj)
     boxes = []
@@ -133,10 +137,10 @@ def cityToFips(city, state):
             # print(row['SUMLEV'])
             if row['SUMLEV'] == '162':
                 if city in str(row['NAME']):
-                    print row
-                    geoid = state.zfill(2) + str(row['PLACE']).zfill(5)
+                    if str(row['NAME']) == 'New York city':
+                        geoid = state.zfill(2) + str(row['PLACE']).zfill(5)
 
-    print geoid
+    # print geoid
     return geoid
 
 
@@ -300,5 +304,8 @@ def getMin(coordslist):
     return minc
 
 
-
+def saveGeojson(gj, fname):
+    import geojson
+    with open(fname, 'wb') as outfile:
+         geojson.dump(gj, outfile)
 
